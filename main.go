@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -34,7 +36,7 @@ func run() error{
 		fmt.Println("encountered error:", err)
 		fmt.Println("output:\n ", output)
 	}
-	fmt.Println(params)
+	err = validateFlags(*params)
 	return nil
 }
 
@@ -57,4 +59,28 @@ func parseFlags(progName string, args []string) (*Config, string, error ){
 	}
 
 	return &conf, buf.String(), nil
+}
+
+func validateFlags(flags Config) error{
+	const serverError = "A database server name must be included. Use -server= to pass the parameter"
+	const userError = "A user must be passed for connection to the database. Use -user="
+	const passwordError = "No password was passed. To continue make sure to pass a password for the database connection. Use -pass="
+	const dbNameError = "Name of database to be used must be included. Use -db=."
+	if flags.server == "" {
+		log.Print(serverError)
+		return errors.New(serverError)
+	}
+	if flags.user == "" {
+		log.Print(userError)
+		return errors.New(userError)
+	}
+	if flags.password == "" {
+		log.Print(passwordError)
+		return errors.New(passwordError)
+	}
+	if flags.databaseName == ""{
+		log.Print(dbNameError)
+		return errors.New(dbNameError)
+	}
+	return nil
 }
