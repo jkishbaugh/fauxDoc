@@ -1,17 +1,22 @@
 package main
 
 import (
+	"FileUtils"
+	"DatabaseUtils"
 	"bytes"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
+	"time"
 )
 
 const (
 	exitOK = 0
 	exitFail = 1
+	query = "SELECT LTRIM(RTRIM(f.ResolvedLocation)) as path\n\t,f.FileSize as size\n\t,d.Title as title\nFROM\n\tdbo.tblEventActual d \n\tJOIN dbo.ctblEventSuperType est ON est.Code = d.EventType\n\tJOIN dbo.devFile f on f.EventID = d.EventID\nWHERE d.CaseID IN (SELECT TOP 500 c.CaseID from dbo.tblCaseActual c Order By c.AddDt DESC)"
 )
 type Config struct{
 	server string
@@ -19,6 +24,7 @@ type Config struct{
 	password string
 	databaseName string
 }
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -37,10 +43,26 @@ func run() error{
 		fmt.Println("output:\n ", output)
 	}
 	err = validateFlags(*params)
+	db,conErr := DatabaseUtils.CreateDatabaseConnection(params.server, params.user, params.password, params.databaseName)
+	checkErr(conErr)
+	defer db.Close()
+	rows, err := DatabaseUtils.PerformSelectQuery(db, query)
+	checkErr(err)
+	defer rows.Close()
+	var documents [] FileUtils.Document
+	for rows.Next() {
+		document := FileUtils.Document{}
+		err = rows.Scan(&document.Path, &document.Size, &document.Title)
+		checkErr(err)
+		documents = append(documents, document)
+		fmt.Println("next result", document.Title)
+		path := document.Path
+		FileUtils.CreateFauxFile(path)
+		FileUtils.WriteToFile(path, randString(document.Size))
+	}
 	return nil
 }
 
-//parse flags and return map
 func parseFlags(progName string, args []string) (*Config, string, error ){
 	flags := flag.NewFlagSet(progName, flag.ContinueOnError)
 	var buf bytes.Buffer
@@ -83,4 +105,22 @@ func validateFlags(flags Config) error{
 		return errors.New(dbNameError)
 	}
 	return nil
+}
+func checkErr(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func randomInt(min, max int) int {
+	rand.Seed(time.Now().UnixNano())
+	return min + rand.Intn(max-min)
+}
+
+func randString (len int) string{
+	bytes := make([]byte, len)
+	for i :=0; i < len; i++ {
+		bytes[i] = byte(randomInt(65, 90))
+	}
+	return string(bytes)
 }
