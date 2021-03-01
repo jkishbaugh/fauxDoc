@@ -9,5 +9,5 @@ replace DatabaseUtils => ./DatabaseUtils
 require (
 	DatabaseUtils v0.0.0-00010101000000-000000000000
 	FileUtils v0.0.0-00010101000000-000000000000
-	github.com/denisenkom/go-mssqldb v0.9.0
+
 )

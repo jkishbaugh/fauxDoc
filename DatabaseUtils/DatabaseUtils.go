@@ -3,6 +3,7 @@ package DatabaseUtils
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/denisenkom/go-mssqldb"
 )
 
 func CreateDatabaseConnection(serverName string, userId string, password string, databaseName string) (*sql.DB, error){
