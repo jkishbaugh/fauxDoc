@@ -52,13 +52,14 @@ func run() error{
 	var documents [] FileUtils.Document
 	for rows.Next() {
 		document := FileUtils.Document{}
+		document.Content = randString(document.Size)
 		err = rows.Scan(&document.Path, &document.Size, &document.Title)
 		checkErr(err)
 		documents = append(documents, document)
-		fmt.Println("next result", document.Title)
-		path := document.Path
-		FileUtils.CreateFauxFile(path)
-		FileUtils.WriteToFile(path, randString(document.Size))
+		fmt.Println("Generating File: ", document.Title)
+		FileUtils.CreateFauxFile(&document)
+		fmt.Println("document size ", document.Size)
+		FileUtils.WriteToFile(document.Path, randString(document.Size))
 	}
 	return nil
 }
@@ -67,7 +68,7 @@ func parseFlags(progName string, args []string) (*Config, string, error ){
 	flags := flag.NewFlagSet(progName, flag.ContinueOnError)
 	var buf bytes.Buffer
 	flags.SetOutput(&buf)
-	fmt.Println(args, progName)
+
 	var conf Config
 	flags.StringVar(&conf.server, "server", "", "name of server where database is located")
 	flags.StringVar( &conf.user,"u", "", "user id to sign in to database server")
